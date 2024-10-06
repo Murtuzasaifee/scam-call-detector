@@ -91,7 +91,7 @@ class SpamCallDetector:
 
     def get_llm_analysis(self, prompt):
         response = self.client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are an expert in analyzing calls for potential spam or scams. Provide a thorough analysis based on the given information."},
                 {"role": "user", "content": prompt}
