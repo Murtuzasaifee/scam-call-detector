@@ -6,15 +6,16 @@ import sys
 import os
 
 
-# Add the folder containing test_dataset.py to the system path
+# Add the folders path under src to the system path like data
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+config_path = os.path.join(os.path.dirname(__file__), '../../configs/api_key.yaml')
 
 # Now you can import test_dataset
 from data import test_dataset
+from prompts import system_prompts
 
 class SpamCallDetector:
     def __init__(self):
-        config_path = os.path.join(os.path.dirname(__file__), '../../configs/api_key.yaml')
         config = self.load_config(config_path)
         open_ai_key = config['openai']['api_key']
         print(open_ai_key)
@@ -35,15 +36,19 @@ class SpamCallDetector:
         frequency_info = self.check_call_frequency(caller_id, call_time)
         
         # Prepare the prompt for the LLM
-        prompt = self.prepare_prompt(sip_message, frequency_info, transcription)
+        prompt = system_prompts.prepare_prompt(sip_message, frequency_info, transcription)
+        
+        print(prompt)
         
         # Get LLM's analysis
-        analysis = self.get_llm_analysis(prompt)
+        # analysis = self.get_llm_analysis(prompt)
         
         # Interpret LLM's response
-        is_spam, reason = self.interpret_llm_response(analysis)
+        # is_spam, reason = self.interpret_llm_response(analysis)
         
-        return is_spam, reason
+        # return is_spam, reason
+        
+        return True, "This is a scam call"
 
     def extract_caller_id(self, sip_message):
         match = re.search(r'From:\s*<sip:(.+?)@', sip_message)
@@ -61,34 +66,7 @@ class SpamCallDetector:
         
         return f"Calls in the last hour: {len(self.call_history[caller_id])}"
 
-    def prepare_prompt(self, sip_message, frequency_info, transcription):
-        prompt = f"""
-        Analyze the following information to determine if this call is likely to be spam or a scam:
-
-        1. SIP Message:
-        {sip_message}
-
-        2. Call Frequency Information:
-        {frequency_info}
-
-        3. Call Transcription:
-        {transcription}
-
-        Consider the following in your analysis:
-        - Any suspicious patterns in the SIP headers
-        - Unusual call frequency
-        - Content of the transcribed call, looking for:
-          * Urgency or pressure tactics
-          * Requests for personal information
-          * Offers that seem too good to be true
-          * Impersonation of authorities or well-known companies
-          * Use of scripts or unnatural language patterns
-
-        Provide a detailed analysis and conclude whether this is likely to be a spam or scam call. 
-        If it is, explain why. If it's not, explain why it appears legitimate.
-        """
-        return prompt
-
+    
     def get_llm_analysis(self, prompt):
         response = self.client.chat.completions.create(
             model="gpt-4o-mini",
@@ -103,6 +81,12 @@ class SpamCallDetector:
         # This is a simple interpretation. You might want to make this more sophisticated.
         is_spam = "spam" in analysis.lower() or "scam" in analysis.lower()
         return is_spam, analysis
+
+
+
+
+
+
 
 # Example usage
 detector = SpamCallDetector()
